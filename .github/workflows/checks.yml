@@ -1,14 +1,10 @@
 name: checks
 
-# Every check the project has, in the one place both ci.yml and release.yml
-# call. Kept here rather than copied into each: a release that ran less than a
-# pull request runs is a release nobody actually checked, and two copies of a
-# matrix drift the moment one of them is edited.
 on:
   workflow_call:
 
 permissions:
-  contents: read # reading the repository is the whole job
+  contents: read
 
 jobs:
   shellcheck:
@@ -16,9 +12,6 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
-      # Preinstalled on the runner image. Printing the version rather than
-      # installing it keeps a minute off every run, and turns a future image
-      # that drops it into a loud failure instead of a silently skipped check.
       - run: shellcheck --version
       - run: shellcheck --severity=warning statusline.sh test.sh
 

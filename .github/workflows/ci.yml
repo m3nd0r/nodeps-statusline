@@ -8,7 +8,6 @@ on:
 permissions:
   contents: read
 
-# A branch pushed twice in a minute only needs its latest commit checked.
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
