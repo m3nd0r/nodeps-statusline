@@ -17,9 +17,31 @@
 STATUSLINE_VERSION=1.0.0 # release.yml asserts this equals the tag being built
 
 # Answered before the slurp below, which waits for EOF and so would hang on a
-# terminal: this is the one invocation that arrives without a payload.
+# terminal: these are the invocations that arrive without a payload.
+#
+# Claude Code passes no arguments at all, so an argument means a person is
+# driving — which is why an unrecognised one is worth an error. Left to fall
+# through, a mistyped flag reaches the slurp and hangs the prompt with no
+# indication of what it is waiting for.
 case "${1:-}" in
+  "") ;;
   -V|--version) echo "nodeps-statusline $STATUSLINE_VERSION"; exit 0 ;;
+  -h|--help)
+    printf '%s\n' \
+      "usage: ${0##*/} [-V | --version] [-h | --help]" \
+      "" \
+      "Prints the Claude Code status line. With no arguments it reads the" \
+      "payload from stdin as JSON and writes one line to stdout." \
+      "" \
+      "Configuration is optional and lives beside this script, same name with" \
+      "a .json suffix. Every key is documented at" \
+      "" \
+      "  https://github.com/m3nd0r/nodeps-statusline"
+    exit 0 ;;
+  *)
+    printf '%s: unknown argument: %s\n' "${0##*/}" "$1" >&2
+    printf "try '%s --help'\n" "${0##*/}" >&2
+    exit 2 ;;
 esac
 
 IFS= read -r -d '' status_input # slurp stdin without forking `cat`;

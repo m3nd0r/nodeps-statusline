@@ -276,11 +276,13 @@ for cfg in '' '{"time_format":"12h"}' '{"week_format":"%Y-%m-%d"}'; do
   is "printf %()T and date agree on ${cfg:-defaults}" "$builtin_line" "$fallback_line"
 done
 
-# --- version ----------------------------------------------------------------
-# The one invocation that carries no payload. It has to answer before the stdin
-# slurp — a regression that moves it after would print a status line here — and
-# release.yml parses the same string to check the tag it is building.
-section "--version"
+# --- arguments ---------------------------------------------------------------
+# The invocations that carry no payload. They have to answer before the stdin
+# slurp — a regression that moves either after it would hang on a terminal — so
+# each is asked here with a full payload waiting, where answering late is
+# visible as a status line. release.yml parses the --version string to check the
+# tag it is building.
+section "arguments"
 
 line=$(bash "$work/sl.sh" --version < /dev/null 2> "$work/err"); rc=$?
 note_stderr '--version'
@@ -290,6 +292,25 @@ case $line in
   *) bad "prints the name and a semver" "nodeps-statusline X.Y.Z" "$line" ;;
 esac
 is "-V is the short form of it" "$line" "$(bash "$work/sl.sh" -V < /dev/null)"
+line=$(printf '%s' "$BIG" | bash "$work/sl.sh" --version)
+hasnt "and it answers before the payload is read" "%" "$line"
+
+line=$(bash "$work/sl.sh" --help < /dev/null 2> "$work/err"); rc=$?
+note_stderr '--help'
+is "--help exits 0" 0 "$rc"
+has "and describes the invocation" "usage: sl.sh" "$line"
+is "-h is the short form of it" "$line" "$(bash "$work/sl.sh" -h < /dev/null)"
+line=$(printf '%s' "$BIG" | bash "$work/sl.sh" --help)
+has "it too answers before the payload is read" "usage: sl.sh" "$line"
+
+# A mistyped flag used to fall through to the slurp and hang the prompt with
+# nothing on screen to say what it was waiting for.
+out=$(printf '%s' "$BIG" | bash "$work/sl.sh" --colour 2> "$work/err"); rc=$?
+err=""; IFS= read -r -d '' err < "$work/err"
+is "an unknown argument exits 2" 2 "$rc"
+is "printing no status line at all" "" "$out"
+has "and naming the argument on stderr" "unknown argument: --colour" "$err"
+has "with a pointer to --help" "try 'sl.sh --help'" "$err"
 
 # --- nothing on stderr ------------------------------------------------------
 # One check standing behind every case above. Claude Code renders the line from
