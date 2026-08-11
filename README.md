@@ -91,9 +91,7 @@ echo '{"model":{"display_name":"Opus 5"},"context_window":{"used_percentage":37}
 ```
 
 `bash ~/.claude/statusline.sh --version` says which copy you ended up with, and
-`--help` summarises both flags. Anything else is an error rather than a wait —
-with no payload on stdin there is nothing for the script to read, and a hung
-prompt is a poor way to learn that.
+`--help` summarises both flags.
 
 ## Configure
 
@@ -127,10 +125,6 @@ missing key and a malformed file all mean the same thing — the default stands.
 Shorthands are matched case-insensitively, and a value that looks like neither a
 shorthand nor a format falls back to the default rather than being printed where
 a clock belongs.
-
-The three numbers are clamped to 100 rather than rejected, so `bar_width: 999`
-draws a hundred cells instead of nothing. A value that does not start with a
-digit — `"abc"`, `-5` — is not a number at all, and leaves the default standing.
 
 ### Gallery
 
@@ -216,6 +210,9 @@ disappears. Nothing in the script prints a number it is not sure of.
   bar rounds up, so any non-zero percentage lights at least one cell.
 - **Token counts are truncated to whole units**, so 999,999 reads as `999k` and
   1,000,000 as `1M`, with nothing in between.
+- **The three numbers are clamped to 100** rather than rejected, so `bar_width: 999`
+  draws a hundred cells instead of nothing. A value that does not start with a
+  digit — `"abc"`, `-5` — is not a number at all, and leaves the default standing.
 
 ## Tests
 
@@ -224,15 +221,7 @@ disappears. Nothing in the script prints a number it is not sure of.
 ./test.sh -v     # and print every rendered line
 ```
 
-Plain bash, no test framework — the script under test clears a "no
-dependencies" bar and the suite that checks it should clear the same one. It
-asserts against the payload shapes from the official docs, including the ones
-the docs warn may be absent or null, and it runs the `date` fallback path on
-every machine by stripping the bash 4.2 check out of a scratch copy.
-
-Every case is also checked for silence: the status line is what lands on stdout,
-so anything the script mutters beside it is a bug that stays invisible in normal
-use — and it is what a config the parser mishandles tends to produce first.
+Plain bash, no test framework.
 
 ## License
 
