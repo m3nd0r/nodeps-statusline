@@ -6,6 +6,12 @@ on:
   push:
     tags: ['v*']
 
+# Never cancel_in_progress here: a half-published release is worse than a
+# duplicate run, which `gh release create` refuses on its own.
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   # The gate, not a formality. ci.yml runs the same checks on the way to main,
   # but nothing connects that run to this one: pushing a commit and its tag
@@ -17,6 +23,7 @@ jobs:
   release:
     needs: checks
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: write # to create the release; the checks above need none of it
     steps:
@@ -40,7 +47,12 @@ jobs:
             exit 1
           }
 
+      # Through env rather than interpolated into the script body: github.* is
+      # trusted here, but a run: block that pastes an expression straight into
+      # its own source is a habit that only has to be wrong once.
       - name: Build notes
+        env:
+          REPO: ${{ github.repository }}
         run: |
           set -eu
           sum=$(sha256sum statusline.sh | cut -d' ' -f1)
@@ -50,7 +62,8 @@ jobs:
             echo '## Install'
             echo
             echo '```bash'
-            echo 'curl -fsSL https://raw.githubusercontent.com/${{ github.repository }}/'"$GITHUB_REF_NAME"'/statusline.sh \'
+            printf 'curl -fsSL https://raw.githubusercontent.com/%s/%s/statusline.sh \\\n' \
+              "$REPO" "$GITHUB_REF_NAME"
             echo '  -o ~/.claude/statusline.sh'
             echo '```'
             echo
@@ -69,7 +82,17 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$GITHUB_REF_NAME" \
+          set -eu
+          # The tag glob is v*, which catches v1.1.0-rc1 as readily as v1.1.0.
+          # A release candidate must not become the download the Install
+          # section of the README sends people to.
+          case $GITHUB_REF_NAME in
+            *-*) stability=--prerelease ;;
+            *)   stability=--latest     ;;
+          esac
+          # --verify-tag: publish only against a tag that exists on the remote,
+          # never one gh would helpfully create from the checked-out commit.
+          gh release create "$GITHUB_REF_NAME" "$stability" --verify-tag \
             --title "$GITHUB_REF_NAME" \
             --notes-file notes.md \
             statusline.sh statusline.sh.sha256

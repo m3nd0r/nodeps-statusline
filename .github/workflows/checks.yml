@@ -7,12 +7,19 @@ name: checks
 on:
   workflow_call:
 
+permissions:
+  contents: read # reading the repository is the whole job
+
 jobs:
   shellcheck:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
-      - run: sudo apt-get update && sudo apt-get install -y shellcheck
+      # Preinstalled on the runner image. Printing the version rather than
+      # installing it keeps a minute off every run, and turns a future image
+      # that drops it into a loud failure instead of a silently skipped check.
+      - run: shellcheck --version
       - run: shellcheck --severity=warning statusline.sh test.sh
 
   test:
@@ -21,6 +28,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
     defaults:
       run:
         shell: bash
@@ -31,6 +39,7 @@ jobs:
 
   legacy-bash:
     runs-on: macos-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - run: /bin/bash --version | head -1
