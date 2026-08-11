@@ -56,15 +56,10 @@ curl -fsSL https://raw.githubusercontent.com/m3nd0r/nodeps-statusline/main/statu
   -o ~/.claude/statusline.sh
 ```
 
-That URL follows `main`, so a later fix reaches you the next time you fetch it.
-To pin a known version instead, put a tag where `main` is — every
-[release](https://github.com/m3nd0r/nodeps-statusline/releases) attaches the
-same file with its `sha256`:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/m3nd0r/nodeps-statusline/v1.0.0/statusline.sh \
-  -o ~/.claude/statusline.sh
-```
+That path follows `main`, so a later fix reaches you the next time you fetch it.
+Put a tag there instead — `…/v1.0.0/statusline.sh` — and the file stops moving
+under you; every [release](https://github.com/m3nd0r/nodeps-statusline/releases)
+carries the same script with its `sha256` beside it.
 
 Or clone it and copy the one file you need:
 
