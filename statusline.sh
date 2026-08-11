@@ -14,6 +14,14 @@
 #     substitution forks a subshell, measured at ~6 ms under Cygwin, and there
 #     are ~19 helper calls per redraw.
 
+STATUSLINE_VERSION=1.0.0 # release.yml asserts this equals the tag being built
+
+# Answered before the slurp below, which waits for EOF and so would hang on a
+# terminal: this is the one invocation that arrives without a payload.
+case "${1:-}" in
+  -V|--version) echo "nodeps-statusline $STATUSLINE_VERSION"; exit 0 ;;
+esac
+
 IFS= read -r -d '' status_input # slurp stdin without forking `cat`;
                                 # the nonzero return at EOF is expected
 

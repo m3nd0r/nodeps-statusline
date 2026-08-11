@@ -1,0 +1,72 @@
+name: release
+
+# Pushing a tag is the whole release procedure: this builds the notes, checks
+# the tag against the version inside the script, and publishes.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write # to create the release
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # the changelog needs the previous tag
+
+      # A tag that disagrees with the script would ship a file that misreports
+      # itself, and the raw URL in the notes below would be the only place the
+      # real version appeared. Asked of the script itself, so --version is
+      # exercised on the artifact being published.
+      - name: Tag matches STATUSLINE_VERSION
+        run: |
+          set -eu
+          declared=$(bash statusline.sh --version < /dev/null)
+          declared=${declared##* }
+          tagged=${GITHUB_REF_NAME#v}
+          echo "script says $declared, tag says $tagged"
+          [ "$declared" = "$tagged" ] || {
+            echo "::error::tag $GITHUB_REF_NAME does not match STATUSLINE_VERSION=$declared" >&2
+            exit 1
+          }
+
+      # The tagged commit has already been through the full OS matrix in ci.yml;
+      # this is the gate against tagging one that had not.
+      - run: ./test.sh
+
+      - name: Build notes
+        run: |
+          set -eu
+          sum=$(sha256sum statusline.sh | cut -d' ' -f1)
+          printf '%s  statusline.sh\n' "$sum" > statusline.sh.sha256
+
+          {
+            echo '## Install'
+            echo
+            echo '```bash'
+            echo 'curl -fsSL https://raw.githubusercontent.com/${{ github.repository }}/'"$GITHUB_REF_NAME"'/statusline.sh \'
+            echo '  -o ~/.claude/statusline.sh'
+            echo '```'
+            echo
+            echo "\`sha256\` \`$sum\`"
+            echo
+            prev=$(git describe --tags --abbrev=0 "$GITHUB_REF_NAME^" 2>/dev/null || true)
+            if [ -n "$prev" ]; then
+              echo "## Changes since $prev"
+              echo
+              git log --pretty='- %s' "$prev..$GITHUB_REF_NAME"
+            fi
+          } > notes.md
+          cat notes.md
+
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            --title "$GITHUB_REF_NAME" \
+            --notes-file notes.md \
+            statusline.sh statusline.sh.sha256

@@ -246,6 +246,20 @@ for cfg in '' '{"time_format":"12h"}' '{"week_format":"%Y-%m-%d"}'; do
   is "printf %()T and date agree on ${cfg:-defaults}" "$builtin_line" "$fallback_line"
 done
 
+# --- version ----------------------------------------------------------------
+# The one invocation that carries no payload. It has to answer before the stdin
+# slurp — a regression that moves it after would print a status line here — and
+# release.yml parses the same string to check the tag it is building.
+section "--version"
+
+line=$(bash "$work/sl.sh" --version < /dev/null); rc=$?
+is "--version exits 0" 0 "$rc"
+case $line in
+  'nodeps-statusline '[0-9]*.[0-9]*.[0-9]*) ok "prints the name and a semver" ;;
+  *) bad "prints the name and a semver" "nodeps-statusline X.Y.Z" "$line" ;;
+esac
+is "-V is the short form of it" "$line" "$(bash "$work/sl.sh" -V < /dev/null)"
+
 # --- summary ----------------------------------------------------------------
 printf '\n'
 if [ "$fail" -eq 0 ]; then

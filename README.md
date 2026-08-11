@@ -56,6 +56,16 @@ curl -fsSL https://raw.githubusercontent.com/m3nd0r/nodeps-statusline/main/statu
   -o ~/.claude/statusline.sh
 ```
 
+That URL follows `main`, so a later fix reaches you the next time you fetch it.
+To pin a known version instead, put a tag where `main` is — every
+[release](https://github.com/m3nd0r/nodeps-statusline/releases) attaches the
+same file with its `sha256`:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/m3nd0r/nodeps-statusline/v1.0.0/statusline.sh \
+  -o ~/.claude/statusline.sh
+```
+
 Or clone it and copy the one file you need:
 
 ```bash
@@ -86,6 +96,8 @@ To check it without Claude Code, feed it a payload by hand:
 echo '{"model":{"display_name":"Opus 5"},"context_window":{"used_percentage":37}}' \
   | bash ~/.claude/statusline.sh
 ```
+
+`bash ~/.claude/statusline.sh --version` says which copy you ended up with.
 
 ## Configure
 
@@ -208,7 +220,7 @@ disappears. Nothing in the script prints a number it is not sure of.
 ## Tests
 
 ```bash
-./test.sh        # 56 checks
+./test.sh        # 59 checks
 ./test.sh -v     # and print every rendered line
 ```
 
