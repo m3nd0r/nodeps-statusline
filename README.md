@@ -215,7 +215,7 @@ disappears. Nothing in the script prints a number it is not sure of.
 ## Tests
 
 ```bash
-./test.sh        # 59 checks
+./test.sh        # 64 checks
 ./test.sh -v     # and print every rendered line
 ```
 

@@ -27,6 +27,7 @@ script=$here/statusline.sh
 work=$(mktemp -d) || exit 1
 trap 'rm -rf "$work"' EXIT
 cp "$script" "$work/sl.sh"
+: > "$work/noise"
 
 # A second copy with the bash 4.2 fast path removed, so the date(1) branch that
 # stock macOS /bin/bash would take is exercised on every run rather than trusted.
@@ -56,15 +57,25 @@ name_colors() {
   printf '%s' "$s"
 }
 
+# Whatever the last invocation left on stderr, filed under the case that caused
+# it and checked once at the very end — see the "stderr" section for why.
+note_stderr() { # $1 = label for the case
+  local err=""
+  IFS= read -r -d '' err < "$work/err"
+  [ -n "$err" ] && printf '%s\n%s\n' "$1" "$err" >> "$work/noise"
+  return 0
+}
+
 # $1 = config JSON ("" writes no config file at all), $2 = payload,
 # $3 = which copy to run ("sl" default, "fb" for the date(1) branch).
 # Leaves the rendered line in $line and the raw, still-coloured one in $raw.
 run() {
   local base=$work/${3:-sl}
   if [ -n "$1" ]; then printf '%s' "$1" > "$base.json"; else rm -f "$base.json"; fi
-  raw=$(printf '%s' "$2" | bash "$base.sh")
+  raw=$(printf '%s' "$2" | bash "$base.sh" 2> "$work/err")
   line=$(strip_ansi "$raw")
   rm -f "$base.json"
+  note_stderr "config ${1:-(none)}"
 }
 
 section() { printf '\n  %s\n' "$1"; }
@@ -195,6 +206,25 @@ has "an absurd bar_width is clamped, not honoured" "▱ 37%" "$line"
 run '{"bar_width":"abc"}' "$BIG"
 is "a non-numeric bar_width falls back to the default" "$default_line" "$line"
 
+# A zero-padded number is still a number to anyone writing a config by hand, but
+# $(( )) reads it as octal — "09" not as a number at all, which used to abort the
+# arithmetic and take the entire context segment down with it.
+run '{"bar_width":"09"}' "$BIG"
+has "a zero-padded bar_width is decimal, not octal" "▰▰▰▰▱▱▱▱▱ 37%" "$line"
+run '{"bar_width":"010"}' "$BIG"
+is "and ten padded to three digits is still ten" "$default_line" "$line"
+run '{"bar_width":100}' "$BIG"; clamped_line=$line
+run '{"bar_width":99999999999999999999}' "$BIG"
+is "a width too long to be an integer clamps like any other" "$clamped_line" "$line"
+
+# Not every path holds a file. A directory is readable, so the guard used to let
+# the redirect through and mutter at a stream nobody reads.
+mkdir -p "$work/sl.json"
+raw=$(printf '%s' "$BIG" | bash "$work/sl.sh" 2> "$work/err"); line=$(strip_ansi "$raw")
+note_stderr 'config (a directory)'
+rmdir "$work/sl.json"
+is "a directory where the config goes leaves the defaults" "$default_line" "$line"
+
 run '{"bar_filled":"#","bar_empty":"-"}' "$BIG"
 has "the bar glyphs are replaceable with ASCII" "####------ 37%" "$line"
 run '{"separator":"·"}' "$BIG"
@@ -252,13 +282,25 @@ done
 # release.yml parses the same string to check the tag it is building.
 section "--version"
 
-line=$(bash "$work/sl.sh" --version < /dev/null); rc=$?
+line=$(bash "$work/sl.sh" --version < /dev/null 2> "$work/err"); rc=$?
+note_stderr '--version'
 is "--version exits 0" 0 "$rc"
 case $line in
   'nodeps-statusline '[0-9]*.[0-9]*.[0-9]*) ok "prints the name and a semver" ;;
   *) bad "prints the name and a semver" "nodeps-statusline X.Y.Z" "$line" ;;
 esac
 is "-V is the short form of it" "$line" "$(bash "$work/sl.sh" -V < /dev/null)"
+
+# --- nothing on stderr ------------------------------------------------------
+# One check standing behind every case above. Claude Code renders the line from
+# stdout, so anything the script mutters beside it is invisible in normal use
+# right up until it isn't — and it is exactly what a config the parser
+# mishandles produces, while stdout still looks plausible enough to pass.
+section "stderr"
+
+noise=""
+IFS= read -r -d '' noise < "$work/noise"
+is "no case wrote anything to stderr" "" "$noise"
 
 # --- summary ----------------------------------------------------------------
 printf '\n'

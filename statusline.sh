@@ -93,7 +93,11 @@ json_number_field seven_day resets_at;       week_reset=$_out
 # below are the authority on both: each one names its key and its default.
 config_input=""
 config_file="${BASH_SOURCE[0]%.sh}.json"
-[ -r "$config_file" ] && IFS= read -r -d '' config_input < "$config_file"
+# -f before -r: a directory is readable, and opening one for input fails loudly
+# on a stream nobody is watching. It also rules out a fifo, which would hold the
+# read — and the line — open forever.
+[ -f "$config_file" ] && [ -r "$config_file" ] &&
+  IFS= read -r -d '' config_input < "$config_file"
 
 config_text() { # $1 = key, $2 = default
   _out=$2
@@ -109,9 +113,15 @@ config_text() { # $1 = key, $2 = default
 
 config_number() { # $1 = key, $2 = default, $3 = max (clamped, never rejected)
   _out=$2
-  local __pattern="\"$1\"[[:space:]]*:[[:space:]]*\"?([0-9]+)"
+  # Two bounds the callers below should not have to think about. Nine digits,
+  # because a longer run stops being an integer to `[` and starts arriving as
+  # "integer expected" on stderr. And base 10 forced with 10#, because $(( ))
+  # reads a leading zero as octal: "010" would quietly mean eight, and "09" is
+  # not a number at all there — the arithmetic that draws the bar aborts, and
+  # bash unwinds out of the whole segment, not just the bar.
+  local __pattern="\"$1\"[[:space:]]*:[[:space:]]*\"?([0-9]{1,9})"
   [[ $config_input =~ $__pattern ]] || return 0
-  _out=${BASH_REMATCH[1]}
+  _out=$(( 10#${BASH_REMATCH[1]} ))
   [ "$_out" -gt "$3" ] && _out=$3
   return 0
 }
