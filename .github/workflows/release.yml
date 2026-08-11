@@ -6,12 +6,19 @@ on:
   push:
     tags: ['v*']
 
-permissions:
-  contents: write # to create the release
-
 jobs:
+  # The gate, not a formality. ci.yml runs the same checks on the way to main,
+  # but nothing connects that run to this one: pushing a commit and its tag
+  # together starts both workflows at once, so the release could publish a
+  # commit whose matrix was still running — or had already gone red.
+  checks:
+    uses: ./.github/workflows/checks.yml
+
   release:
+    needs: checks
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # to create the release; the checks above need none of it
     steps:
       - uses: actions/checkout@v4
         with:
@@ -32,10 +39,6 @@ jobs:
             echo "::error::tag $GITHUB_REF_NAME does not match STATUSLINE_VERSION=$declared" >&2
             exit 1
           }
-
-      # The tagged commit has already been through the full OS matrix in ci.yml;
-      # this is the gate against tagging one that had not.
-      - run: ./test.sh
 
       - name: Build notes
         run: |
