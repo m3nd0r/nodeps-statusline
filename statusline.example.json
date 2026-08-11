@@ -1,0 +1,19 @@
+{
+  "emoji": true,
+  "icon_context": "🧠",
+  "icon_session": "⏳",
+  "icon_week": "📅",
+
+  "time_format": "24h",
+  "week_format": "%b %e",
+
+  "bar_width": 10,
+  "bar_filled": "▰",
+  "bar_empty": "▱",
+
+  "warn_percent": 70,
+  "crit_percent": 90,
+
+  "separator": "│",
+  "show_tokens": true
+}

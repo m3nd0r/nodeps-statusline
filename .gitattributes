@@ -1,0 +1,3 @@
+# core.autocrlf=true is the Git for Windows default, and a CRLF checkout of a
+# shell script fails on the shebang line. Keep the working tree at LF.
+* text=auto eol=lf

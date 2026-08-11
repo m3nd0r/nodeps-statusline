@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="674" height="46" viewBox="0 0 674 46" role="img" aria-label="Opus 5 │ 🧠 ▰▰▰▰▰▰▰▰▱▱ 78% 784k/1M │ ⏳ 94% → 11:00 │ 📅 41% → Aug 12">
+  <style>
+    .bg   { fill: #f6f8fa; stroke: #d0d7de; }
+    .base { fill: #1f2328; } .dim { fill: #656d76; }
+    .green{ fill: #1a7f37; } .yellow { fill: #9a6700; } .red { fill: #cf222e; }
+    @media (prefers-color-scheme: dark) {
+      .bg   { fill: #0d1117; stroke: #30363d; }
+      .base { fill: #e6edf3; } .dim { fill: #8b949e; }
+      .green{ fill: #3fb950; } .yellow { fill: #d29922; } .red { fill: #f85149; }
+    }
+    text { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+           "Liberation Mono", monospace; font-size: 14px; }
+  </style>
+  <rect class="bg" x="0.5" y="0.5" width="673" height="45" rx="6"/>
+  <text x="337" y="28" text-anchor="middle" xml:space="preserve"><tspan class="dim">Opus 5</tspan><tspan class="base"> </tspan><tspan class="dim">│</tspan><tspan class="base"> 🧠 </tspan><tspan class="yellow">▰▰▰▰▰▰▰▰▱▱ 78%</tspan><tspan class="base"> </tspan><tspan class="dim">784k/1M</tspan><tspan class="base"> </tspan><tspan class="dim">│</tspan><tspan class="base"> ⏳ </tspan><tspan class="red">94%</tspan><tspan class="base"> </tspan><tspan class="dim">→ 11:00</tspan><tspan class="base"> </tspan><tspan class="dim">│</tspan><tspan class="base"> 📅 </tspan><tspan class="green">41%</tspan><tspan class="base"> </tspan><tspan class="dim">→ Aug 12</tspan></text>
+</svg>
