@@ -22,7 +22,10 @@ verbose=""
 
 here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 script=$here/statusline.sh
-[ -r "$script" ] || { echo "cannot read $script" >&2; exit 1; }
+example=$here/statusline.example.json
+for f in "$script" "$example"; do
+  [ -r "$f" ] || { echo "cannot read $f" >&2; exit 1; }
+done
 
 work=$(mktemp -d) || exit 1
 trap 'rm -rf "$work"' EXIT
@@ -185,10 +188,13 @@ run '{}' "$BIG"
 is "an empty config matches no config at all" "$default_line" "$line"
 run '{"time_format":' "$BIG"
 is "malformed JSON leaves every default standing" "$default_line" "$line"
-run '{"emoji":true,"icon_context":"🧠","icon_session":"⏳","icon_week":"📅","time_format":"24h",
-"week_format":"%b %e","bar_width":10,"bar_filled":"▰","bar_empty":"▱","warn_percent":70,
-"crit_percent":90,"separator":"│","show_tokens":true}' "$BIG"
-is "the example config reproduces the defaults exactly" "$default_line" "$line"
+# Read off disk rather than pasted in here. The file is what people copy, and a
+# transcription of it in the suite would go on passing while the real one drifted
+# — which is the one thing this case exists to catch.
+example_json=""
+IFS= read -r -d '' example_json < "$example"
+run "$example_json" "$BIG"
+is "statusline.example.json reproduces the defaults exactly" "$default_line" "$line"
 
 for v in 'false' '"false"' '"False"' '0' '"no"' '"off"'; do
   run "{\"emoji\":$v}" "$BIG"
